@@ -1,0 +1,44 @@
+# Local development values
+# Use with: helm install store-platform ./helm/store-platform -f ./helm/store-platform/values-local.yaml
+
+replicaCount:
+  api: 1
+  dashboard: 1
+
+image:
+  api:
+    repository: store-platform-api
+    tag: latest
+    pullPolicy: Never  # Use local images
+  dashboard:
+    repository: store-platform-dashboard
+    tag: latest
+    pullPolicy: Never
+
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    dashboard: dashboard.127.0.0.1.nip.io
+    api: api.127.0.0.1.nip.io
+  tls: []
+
+config:
+  baseDomain: 127.0.0.1.nip.io
+  logLevel: debug
+
+resources:
+  api:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  dashboard:
+    requests:
+      cpu: 25m
+      memory: 32Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi

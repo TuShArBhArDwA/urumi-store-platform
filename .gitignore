@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+dist/
+
+# Build artifacts
+*.log
+npm-debug.log*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Kubernetes
+*.kubeconfig
+
+# Helm
+*.tgz
+charts/
+
+# Testing
+coverage/
+.nyc_output/

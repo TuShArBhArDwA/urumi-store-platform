@@ -1,0 +1,61 @@
+# Default values for store-platform
+
+replicaCount:
+  api: 1
+  dashboard: 1
+
+image:
+  api:
+    repository: store-platform-api
+    tag: latest
+    pullPolicy: IfNotPresent
+  dashboard:
+    repository: store-platform-dashboard
+    tag: latest
+    pullPolicy: IfNotPresent
+
+service:
+  api:
+    type: ClusterIP
+    port: 3001
+  dashboard:
+    type: ClusterIP
+    port: 80
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations: {}
+  hosts:
+    dashboard: dashboard.127.0.0.1.nip.io
+    api: api.127.0.0.1.nip.io
+  tls: []
+
+config:
+  baseDomain: 127.0.0.1.nip.io
+  logLevel: info
+
+resources:
+  api:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  dashboard:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+rbac:
+  create: true
+
+serviceAccount:
+  create: true
+  name: store-platform
+
+namespace: store-platform

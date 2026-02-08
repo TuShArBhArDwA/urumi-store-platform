@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: store-platform-api
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "store-platform.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.api.type }}
+  ports:
+    - port: {{ .Values.service.api.port }}
+      targetPort: 3001
+      protocol: TCP
+      name: http
+  selector:
+    app: store-platform-api
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: store-platform-dashboard
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "store-platform.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.dashboard.type }}
+  ports:
+    - port: {{ .Values.service.dashboard.port }}
+      targetPort: 80
+      protocol: TCP
+      name: http
+  selector:
+    app: store-platform-dashboard

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: store-platform-config
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "store-platform.labels" . | nindent 4 }}
+data:
+  BASE_DOMAIN: {{ .Values.config.baseDomain | quote }}
+  LOG_LEVEL: {{ .Values.config.logLevel | quote }}
+  NODE_ENV: "production"

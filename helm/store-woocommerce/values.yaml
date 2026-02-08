@@ -1,0 +1,57 @@
+# Default values for store-woocommerce
+
+storeId: ""
+storeName: ""
+
+wordpress:
+  image: wordpress:6.4-apache
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 1
+      memory: 1Gi
+  pvc:
+    size: 10Gi
+
+mariadb:
+  image: mariadb:10.11
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  pvc:
+    size: 5Gi
+
+ingress:
+  enabled: true
+  className: nginx
+  baseDomain: 127.0.0.1.nip.io
+  annotations: {}
+  tls: []
+
+resourceQuota:
+  enabled: true
+  hard:
+    requests.cpu: "1"
+    requests.memory: 2Gi
+    limits.cpu: "2"
+    limits.memory: 4Gi
+    persistentvolumeclaims: "3"
+    pods: "10"
+
+limitRange:
+  enabled: true
+  default:
+    cpu: 500m
+    memory: 512Mi
+  defaultRequest:
+    cpu: 100m
+    memory: 128Mi
+
+networkPolicy:
+  enabled: false

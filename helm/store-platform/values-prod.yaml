@@ -1,0 +1,55 @@
+# Production values (VPS/k3s deployment)
+# Use with: helm install store-platform ./helm/store-platform -f ./helm/store-platform/values-prod.yaml
+
+replicaCount:
+  api: 2
+  dashboard: 2
+
+image:
+  api:
+    repository: ghcr.io/your-org/store-platform-api
+    tag: latest
+    pullPolicy: Always
+  dashboard:
+    repository: ghcr.io/your-org/store-platform-dashboard
+    tag: latest
+    pullPolicy: Always
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    dashboard: dashboard.yourdomain.com
+    api: api.yourdomain.com
+  tls:
+    - secretName: platform-tls
+      hosts:
+        - dashboard.yourdomain.com
+        - api.yourdomain.com
+
+config:
+  baseDomain: yourdomain.com
+  logLevel: info
+
+resources:
+  api:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 1
+      memory: 1Gi
+  dashboard:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# Enable pod disruption budget for HA
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
