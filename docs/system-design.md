@@ -6,9 +6,9 @@ The Urumi Store Platform is a Kubernetes-native multi-tenant store provisioning 
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                     NGINX Ingress Controller                     │
-│            (Handles routing to dashboard, API, stores)           │
-└─────────────────┬──────────────────────┬───────────────────────┘
+│                     NGINX Ingress Controller                    │
+│            (Handles routing to dashboard, API, stores)          │
+└─────────────────┬──────────────────────┬────────────────────────┘
                   │                      │
     ┌─────────────▼──────────┐   ┌──────▼──────────────────────┐
     │   store-platform NS    │   │     store-abc123 NS         │
