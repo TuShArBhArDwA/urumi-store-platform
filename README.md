@@ -1,34 +1,7 @@
 # Urumi Store Platform
+<img width="1600" height="792" alt="image" src="https://github.com/user-attachments/assets/472fd910-4ce9-4d30-8e7e-5d7cb036bf63" />
 
 A Kubernetes-native multi-tenant store provisioning platform that creates isolated e-commerce stores on demand.
-
-Round-1 status:
-- WooCommerce: implemented end-to-end (provisioning + checkout-ready bootstrap)
-- Medusa: stubbed (architecture path exists, implementation pending)
-
-## Assignment Deliverables Checklist
-
-This repository includes:
-- `README.md` with:
-  - local setup instructions
-  - VPS/production-like setup instructions
-  - how to create a store and place an order
-- Source code:
-  - `dashboard/` (frontend)
-  - `backend/` (API + orchestration)
-- Provisioning/orchestration logic:
-  - `backend/src/services/storeService.ts`
-  - `backend/src/services/k8sService.ts`
-- Helm charts + values:
-  - `helm/store-platform/`
-  - `helm/store-platform/values-local.yaml`
-  - `helm/store-platform/values-prod.yaml`
-- System design and tradeoffs notes:
-  - `docs/HLD.md`
-  - `docs/LLD.md`
-  - `docs/system-design.md`
-- Demo recording script:
-  - `docs/demo-script.md`
 
 ## Repository Layout
 
@@ -161,26 +134,18 @@ What changes for production:
 - DNS/domain, ingress/tls, storage class, secret strategy, image registry policies, scaling/HA values.
 
 See:
-- `docs/HLD.md`
-- `docs/LLD.md`
-- `docs/system-design.md`
-
-## Demo Video Coverage Script
-
-Use `docs/demo-script.md` during recording. It explicitly covers:
-- system design and responsibilities
-- end-to-end flow (create -> ready -> order -> delete)
-- isolation/resources/reliability
-- security posture
-- scaling plan
-- abuse prevention guardrails
-- local-to-VPS story and Helm upgrade/rollback
-
-## Medusa Scope Note
-
-Medusa remains intentionally stubbed for Round-1 (`backend/src/services/storeService.ts`).
-The engine abstraction is already structured for adding a full Medusa path next.
+- [High Level Design (HLD)](docs/HLD.md)
+- [Low Level Design (LLD)](docs/LLD.md)
+- [System Design](docs/system-design.md)
 
 ## License
 
-MIT
+MIT License - see [LICENSE](LICENSE) file for details.
+
+## Connect with me
+
+If you'd like to connect, feel free to reach out — [Click here](https://minianonlink.vercel.app/tusharbhardwaj)
+
+
+
+
