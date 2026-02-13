@@ -19,12 +19,12 @@ ingress:
   enabled: true
   className: nginx
   hosts:
-    dashboard: dashboard.127.0.0.1.nip.io
-    api: api.127.0.0.1.nip.io
+    dashboard: dashboard.localhost
+    api: api.localhost
   tls: []
 
 config:
-  baseDomain: 127.0.0.1.nip.io
+  baseDomain: localhost
   logLevel: debug
 
 resources:

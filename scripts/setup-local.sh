@@ -40,6 +40,10 @@ echo
 echo "Installing NGINX Ingress Controller..."
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
 
+echo "Pinning ingress controller to ingress-ready node..."
+kubectl patch deployment ingress-nginx-controller -n ingress-nginx --type=merge \
+  -p '{"spec":{"template":{"spec":{"nodeSelector":{"kubernetes.io/os":"linux","ingress-ready":"true"}}}}}'
+
 echo "Waiting for ingress controller to be ready..."
 kubectl wait --namespace ingress-nginx \
   --for=condition=ready pod \
@@ -50,6 +54,20 @@ echo
 echo "========================================"
 echo "Building Docker images..."
 echo "========================================"
+
+# Preload store runtime images to avoid provisioning failures when cluster nodes
+# cannot reach external registries directly.
+echo "Pulling and loading store runtime images (MariaDB/WP-CLI/BusyBox)..."
+docker pull mariadb:10.11
+docker pull busybox:1.36
+docker pull wordpress:cli
+kind load docker-image mariadb:10.11 --name urumi-stores
+kind load docker-image busybox:1.36 --name urumi-stores
+kind load docker-image wordpress:cli --name urumi-stores
+
+echo "Building and loading WordPress + WooCommerce runtime image..."
+docker build -t store-platform-wordpress-woocommerce:latest -f docker/wordpress-woocommerce/Dockerfile .
+kind load docker-image store-platform-wordpress-woocommerce:latest --name urumi-stores
 
 # Build backend
 echo "Building backend image..."
@@ -75,6 +93,7 @@ echo "Deploying Store Platform..."
 echo "========================================"
 
 helm upgrade --install store-platform ./helm/store-platform \
+  --namespace store-platform \
   -f ./helm/store-platform/values-local.yaml \
   --create-namespace
 
@@ -95,7 +114,7 @@ echo "========================================"
 echo "Setup Complete!"
 echo "========================================"
 echo
-echo "Dashboard: http://dashboard.127.0.0.1.nip.io"
-echo "API:       http://dashboard.127.0.0.1.nip.io/api"
+echo "Dashboard: http://dashboard.localhost"
+echo "API:       http://dashboard.localhost/api"
 echo
 echo "To create a store, open the dashboard and click 'Create New Store'"

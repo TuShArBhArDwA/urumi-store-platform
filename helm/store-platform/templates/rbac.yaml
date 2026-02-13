@@ -44,6 +44,10 @@ rules:
   - apiGroups: ["apps"]
     resources: ["deployments", "statefulsets"]
     verbs: ["create", "delete", "get", "list", "update", "watch"]
+  # Jobs for one-time WooCommerce bootstrap tasks
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["create", "delete", "get", "list", "watch"]
   # Ingress
   - apiGroups: ["networking.k8s.io"]
     resources: ["ingresses"]

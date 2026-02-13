@@ -27,6 +27,16 @@ app.use((req, res, next) => {
 });
 
 // Routes
+app.get('/api', (_req, res) => {
+    res.json({
+        service: 'store-platform-api',
+        status: 'ok',
+        endpoints: {
+            health: '/api/health/live',
+            stores: '/api/stores'
+        }
+    });
+});
 app.use('/api/health', healthRouter);
 app.use('/api/stores', storeRouter);
 

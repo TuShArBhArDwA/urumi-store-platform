@@ -27,12 +27,12 @@ ingress:
   className: nginx
   annotations: {}
   hosts:
-    dashboard: dashboard.127.0.0.1.nip.io
-    api: api.127.0.0.1.nip.io
+    dashboard: dashboard.localhost
+    api: api.localhost
   tls: []
 
 config:
-  baseDomain: 127.0.0.1.nip.io
+  baseDomain: localhost
   logLevel: info
 
 resources:

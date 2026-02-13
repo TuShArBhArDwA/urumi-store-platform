@@ -37,7 +37,7 @@ export class StoreService {
     async createStore(request: CreateStoreRequest): Promise<Store> {
         const id = uuidv4().split('-')[0]; // Short ID
         const namespace = `store-${id}`;
-        const baseDomain = process.env.BASE_DOMAIN || '127.0.0.1.nip.io';
+        const baseDomain = process.env.BASE_DOMAIN || 'localhost';
 
         const store: Store = {
             id,
@@ -116,6 +116,16 @@ export class StoreService {
             this.addEvent(store.id, 'info', 'Waiting for pods to be ready');
             await this.k8sService.waitForDeploymentReady(store.namespace, 'wordpress', 300000); // 5 min timeout
 
+            // Step 5: Finalize engine-specific bootstrap
+            if (store.engine === 'woocommerce') {
+                this.addEvent(store.id, 'info', 'Bootstrapping WooCommerce (plugins, sample catalog, checkout)');
+                await this.k8sService.bootstrapWooCommerceStore(
+                    store.namespace,
+                    store.id,
+                    store.name
+                );
+            }
+
             this.updateStoreStatus(store.id, 'ready');
             this.addEvent(store.id, 'info', 'Store is ready!');
 
@@ -145,18 +155,9 @@ export class StoreService {
     }
 
     private async refreshStoreStatus(id: string): Promise<void> {
-        const store = stores.get(id);
-        if (!store) return;
-
-        try {
-            const isReady = await this.k8sService.isDeploymentReady(store.namespace, 'wordpress');
-            if (isReady) {
-                this.updateStoreStatus(id, 'ready');
-            }
-        } catch (error) {
-            // Namespace might not exist yet or deployment not found
-            logger.debug(`Could not check status for store ${id}: ${(error as Error).message}`);
-        }
+        // Provisioning completion is controlled by the async provision flow.
+        // Avoid marking a store as ready from polling-only checks.
+        return;
     }
 
     private updateStoreStatus(id: string, status: StoreStatus, error?: string): void {
