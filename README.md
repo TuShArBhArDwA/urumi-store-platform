@@ -1,43 +1,85 @@
 # Urumi Store Platform
 
-A Kubernetes-native multi-tenant store provisioning platform that enables on-demand deployment of e-commerce stores (WooCommerce/MedusaJS).
+A Kubernetes-native multi-tenant store provisioning platform that creates isolated e-commerce stores on demand.
 
-## Quick Start (Local Development)
+Round-1 status:
+- WooCommerce: implemented end-to-end (provisioning + checkout-ready bootstrap)
+- Medusa: stubbed (architecture path exists, implementation pending)
 
-### Prerequisites
-- Docker Desktop
-- Node.js 18+
-- kubectl
-- Helm 3
-- Kind
+## Assignment Deliverables Checklist
 
-### 1. Install Kind (if not installed)
-```bash
-# Windows (PowerShell as Admin)
-choco install kind
+This repository includes:
+- `README.md` with:
+  - local setup instructions
+  - VPS/production-like setup instructions
+  - how to create a store and place an order
+- Source code:
+  - `dashboard/` (frontend)
+  - `backend/` (API + orchestration)
+- Provisioning/orchestration logic:
+  - `backend/src/services/storeService.ts`
+  - `backend/src/services/k8sService.ts`
+- Helm charts + values:
+  - `helm/store-platform/`
+  - `helm/store-platform/values-local.yaml`
+  - `helm/store-platform/values-prod.yaml`
+- System design and tradeoffs notes:
+  - `docs/HLD.md`
+  - `docs/LLD.md`
+  - `docs/system-design.md`
+- Demo recording script:
+  - `docs/demo-script.md`
 
-# Or download from: https://kind.sigs.k8s.io/docs/user/quick-start/#installation
+## Repository Layout
+
+```text
+.
+├── backend/                     # Node.js API + orchestration
+├── dashboard/                   # React dashboard
+├── helm/
+│   ├── store-platform/          # Platform chart (dashboard + API)
+│   └── store-woocommerce/       # Store chart artifacts/reference
+├── scripts/                     # Local setup scripts
+├── docs/
+│   ├── HLD.md
+│   ├── LLD.md
+│   ├── system-design.md
+│   ├── production-setup.md
+│   └── demo-script.md
+└── docker/wordpress-woocommerce/# WordPress+Woo custom image definition
 ```
 
-### 2. Create Local Cluster
+## Local Setup (Kind)
+
+Prerequisites:
+- Docker
+- kind
+- kubectl
+- helm
+- Node.js 18+
+
+Fast path:
+
 ```bash
-# Create cluster with ingress support
+./scripts/setup-local.sh
+```
+
+Manual path:
+
+```bash
+# 1) Create cluster
 kind create cluster --name urumi-stores --config kind-config.yaml
 
-# Install NGINX Ingress Controller
+# 2) Install ingress-nginx
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
-
-# Ensure ingress controller runs on ingress-ready control-plane node
 kubectl patch deployment ingress-nginx-controller -n ingress-nginx --type=merge \
   -p '{"spec":{"template":{"spec":{"nodeSelector":{"kubernetes.io/os":"linux","ingress-ready":"true"}}}}}'
-
-# Wait for ingress controller
 kubectl wait --namespace ingress-nginx \
   --for=condition=ready pod \
   --selector=app.kubernetes.io/component=controller \
-  --timeout=90s
+  --timeout=120s
 
-# Preload runtime images used by dynamically created WooCommerce stores
+# 3) Preload runtime images
 docker pull mariadb:10.11
 docker pull busybox:1.36
 docker pull wordpress:cli
@@ -45,110 +87,99 @@ kind load docker-image mariadb:10.11 --name urumi-stores
 kind load docker-image busybox:1.36 --name urumi-stores
 kind load docker-image wordpress:cli --name urumi-stores
 
-# Build and load local WordPress image with WooCommerce pre-bundled
+# 4) Build WordPress+Woo runtime image and load
 docker build -t store-platform-wordpress-woocommerce:latest -f docker/wordpress-woocommerce/Dockerfile .
 kind load docker-image store-platform-wordpress-woocommerce:latest --name urumi-stores
-```
 
-### 3. Deploy the Platform
-```bash
-# Install platform components
-helm install store-platform ./helm/store-platform \
-  --namespace store-platform \
+# 5) Build/load platform images
+(cd backend && npm run build && docker build --pull=false -t store-platform-api:latest .)
+(cd dashboard && npm run build && docker build --pull=false -t store-platform-dashboard:latest .)
+kind load docker-image store-platform-api:latest --name urumi-stores
+kind load docker-image store-platform-dashboard:latest --name urumi-stores
+
+# 6) Deploy platform
+helm upgrade --install store-platform ./helm/store-platform \
   -f ./helm/store-platform/values-local.yaml \
-  --create-namespace
-
-# Verify deployment
-kubectl get pods -n store-platform
+  --namespace ingress-nginx
 ```
 
-### 4. Access Dashboard
-Open: http://dashboard.localhost
+Access:
+- Dashboard: `http://dashboard.localhost`
+- API: `http://dashboard.localhost/api`
 
-## Creating a Store
+## VPS / Production-like Setup (k3s)
 
-1. Open the dashboard
-2. Click "Create New Store"
-3. Enter store name and select engine (WooCommerce)
-4. Wait for status to change to "Ready"
-5. Click the store URL to access your store
+Detailed guide: `docs/production-setup.md`
 
-## Placing an Order (WooCommerce)
+Minimum path:
 
-1. Open the store URL
-2. Open the seeded `Sample Product` and add it to cart
-3. Proceed to checkout
-4. Complete order using `Cash on delivery` (or `Cheque payments`)
-5. Access WooCommerce admin at `/wp-admin` (admin/admin123)
-6. View order in WooCommerce > Orders
-
-## Deleting a Store
-
-1. Click the delete button on a store
-2. Confirm deletion
-3. All resources (namespace, pods, PVCs) are cleaned up
-
-## VPS/Production Deployment (k3s)
-
-See [docs/production-setup.md](docs/production-setup.md) for detailed instructions.
-
-### Quick Overview
 ```bash
-# On VPS, install k3s
+# On VPS
 curl -sfL https://get.k3s.io | sh -
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
-# Deploy with production values
-helm install store-platform ./helm/store-platform -f ./helm/store-platform/values-prod.yaml
+# Deploy
+helm upgrade --install store-platform ./helm/store-platform \
+  -f ./helm/store-platform/values-prod.yaml \
+  --create-namespace
 ```
 
-### Key Differences (Local vs Production)
-| Setting | Local | Production |
-|---------|-------|------------|
-| Ingress | `.localhost` subdomains | Real domain |
-| TLS | Disabled | cert-manager |
-| Storage | hostPath | local-path-provisioner |
-| Replicas | 1 | 2+ |
+Production changes vs local:
+- real domain + DNS (`*.yourdomain.com`)
+- TLS (cert-manager + issuer)
+- registry images with pull secrets
+- production storage class and backup plan
+- stronger secret management strategy
 
-## Architecture
+## Create a Store and Place an Order (WooCommerce)
 
-See [docs/system-design.md](docs/system-design.md) for detailed architecture.
+1. Open `http://dashboard.localhost`
+2. Create store with engine `woocommerce`
+3. Wait until status becomes `ready`
+4. Open storefront URL (`http://<store-id>.localhost`)
+5. Open `Sample Product`, click `Add to cart`
+6. Go to checkout and complete using:
+   - `Cash on delivery`, or
+   - `Cheque payments`
+7. Open admin and verify order:
+   - URL: `http://<store-id>.localhost/wp-admin`
+   - Username: `admin`
+   - Password: `admin123`
+   - Menu: WooCommerce -> Orders
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Ingress Controller                        │
-└─────────────────────┬───────────────────────────────────────┘
-                      │
-        ┌─────────────┼─────────────┐
-        │             │             │
-        ▼             ▼             ▼
-   Dashboard       Backend     Store URLs
-   (React)        (Node.js)    (WooCommerce)
-                      │
-                      ▼
-              ┌───────────────┐
-              │ Kubernetes    │
-              │ API Server    │
-              └───────────────┘
-                      │
-        ┌─────────────┼─────────────┐
-        ▼             ▼             ▼
-   store-abc     store-xyz     store-123
-   namespace     namespace     namespace
-```
+## System Design & Tradeoffs (Short)
 
-## Project Structure
+Architecture choice:
+- Namespace-per-store isolation, platform API orchestrates Kubernetes resources directly.
 
-```
-urumi/
-├── dashboard/          # React frontend
-├── backend/            # Node.js API server
-├── helm/
-│   ├── store-platform/ # Platform Helm chart
-│   └── store-woocommerce/ # Per-store chart
-├── scripts/            # Setup scripts
-├── docs/               # Documentation
-└── kind-config.yaml    # Kind cluster config
-```
+Idempotency / failure / cleanup:
+- Resource creation handles common idempotent conflicts (`already exists`).
+- Provisioning is step-based with explicit waits and timeout-driven failure states.
+- Store deletion is namespace deletion for strong cleanup guarantees.
+
+What changes for production:
+- DNS/domain, ingress/tls, storage class, secret strategy, image registry policies, scaling/HA values.
+
+See:
+- `docs/HLD.md`
+- `docs/LLD.md`
+- `docs/system-design.md`
+
+## Demo Video Coverage Script
+
+Use `docs/demo-script.md` during recording. It explicitly covers:
+- system design and responsibilities
+- end-to-end flow (create -> ready -> order -> delete)
+- isolation/resources/reliability
+- security posture
+- scaling plan
+- abuse prevention guardrails
+- local-to-VPS story and Helm upgrade/rollback
+
+## Medusa Scope Note
+
+Medusa remains intentionally stubbed for Round-1 (`backend/src/services/storeService.ts`).
+The engine abstraction is already structured for adding a full Medusa path next.
 
 ## License
 
